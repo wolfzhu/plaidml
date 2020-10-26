@@ -7,6 +7,7 @@
 #include "mlir/Conversion/StandardToLLVM/ConvertStandardToLLVM.h"
 #include "mlir/Conversion/StandardToLLVM/ConvertStandardToLLVMPass.h"
 #include "mlir/Conversion/StandardToSPIRV/ConvertStandardToSPIRVPass.h"
+#include "mlir/Dialect/Affine/Passes.h"
 #include "mlir/Dialect/GPU/Passes.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/SPIRV/Passes.h"
@@ -57,8 +58,22 @@ void pipelineBuilder(OpPassManager &pm) {
 
   // Do subgroup or accumulation
   pm.addPass(pmlc::dialect::pxa::createSubgroupsPass());
-  // pm.addPass(pmlc::dialect::pxa::createTileAccumulatePass());
-  pm.addPass(pmlc::dialect::pxa::createAffineNormalizePass(/*promote=*/false));
+  pm.addPass(pmlc::dialect::pxa::createAffineNormalizePass());
+  pm.addPass(createCanonicalizerPass());
+  pm.addPass(createCSEPass());
+
+  // Do tiled fusion
+  pm.addPass(pxa::createFusionPass(/*memoryActivityThreshold=*/0,
+                                   /*exactlyMatch=*/false, /*tiledFusion=*/true,
+                                   /*loopDepth=*/3));
+  pm.addPass(pxa::createAffineNormalizePass());
+  pm.addPass(createCanonicalizerPass());
+  pm.addPass(pxa::createMemRefDataFlowOptPass(/*onlyParallelNested=*/true));
+  pm.addPass(createCanonicalizerPass());
+  // TODO: parametrize localize pass depending on memory size and HW caps
+  pm.addPass(pxa::createLocalizePass());
+  pm.addPass(pxa::createResizeTmpsPass(/*onlyParallelNested=*/true));
+  pm.addPass(pxa::createAffineNormalizePass());
   pm.addPass(createCanonicalizerPass());
   pm.addPass(createCSEPass());
 
@@ -70,6 +85,13 @@ void pipelineBuilder(OpPassManager &pm) {
 
   // Lower out of PXA memory semantics
   pm.addPass(pmlc::target::intel_gen::createLowerPXAToAffinePass());
+
+  // Unroll affine.for loops.
+  pm.addPass(createLoopUnrollPass(
+      /*unrollFactor=*/256,
+      /*unrollUpToFactor=*/true));
+  pm.addPass(createCanonicalizerPass());
+  pm.addPass(createCSEPass());
 
   // Pack dims
   pm.addPass(pmlc::target::intel_gen::createAffineIndexPackPass());
@@ -85,11 +107,12 @@ void pipelineBuilder(OpPassManager &pm) {
   pm.addPass(dialect::stdx::createI1StorageToI32Pass());
 
   // Devectorize
-  pm.addPass(pmlc::target::intel_gen::createSubgroupBroadcastPass());
+  pm.addPass(pmlc::target::intel_gen::createSubgroupBroadcastPass(
+      /*useBlockOpsr=*/true));
   pm.addPass(createCSEPass());
 
   // Lower mapped scf.parallel's to GPU
-  pm.addPass(createParallelLoopToGpuPass());
+  pm.addPass(pmlc::target::intel_gen::createParallelLoopToGpuPass());
   pm.addPass(createCanonicalizerPass());
   pm.addPass(createCSEPass());
 
@@ -111,6 +134,7 @@ void pipelineBuilder(OpPassManager &pm) {
 
   // SPIR-V passes for lowering attributes.
   pm.addPass(createSetSubgroupSizePass());
+  pm.addPass(createLegalizeSpirvPass());
   pm.addPass(spirv::createLowerABIAttributesPass());
   pm.addPass(spirv::createUpdateVersionCapabilityExtensionPass());
 

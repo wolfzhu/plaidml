@@ -106,16 +106,6 @@ struct plaidml_dim_expr {
   ast::DimNodePtr node;
 };
 
-void plaidml_edsl_init(  //
-    plaidml_error* err) {
-  static std::once_flag is_initialized;
-  ffi_wrap_void(err, [&] {
-    std::call_once(is_initialized, []() {  //
-      IVLOG(1, "plaidml_edsl_init");
-    });
-  });
-}
-
 void plaidml_expr_free(  //
     plaidml_error* err,  //
     plaidml_expr* expr) {
@@ -140,7 +130,7 @@ plaidml_datatype plaidml_expr_get_dtype(  //
   return ffi_wrap<plaidml_datatype>(err, PLAIDML_DATA_INVALID, [&] {
     IVLOG(3, "plaidml_expr_get_dtype");
     ast::Evaluator evaluator;
-    TensorShape shape = evaluator.getShape(expr->node.get());
+    TensorShape shape = evaluator.getShape(expr->node);
     return convertIntoDataType(shape.elementType);
   });
 }
@@ -150,7 +140,7 @@ size_t plaidml_expr_get_rank(  //
     plaidml_expr* expr) {
   return ffi_wrap<size_t>(err, 0, [&] {
     ast::Evaluator evaluator;
-    TensorShape shape = evaluator.getShape(expr->node.get());
+    TensorShape shape = evaluator.getShape(expr->node);
     return shape.getRank();
   });
 }
@@ -161,7 +151,7 @@ plaidml_shape* plaidml_expr_get_shape(  //
   return ffi_wrap<plaidml_shape*>(err, nullptr, [&] {
     IVLOG(3, "plaidml_expr_get_shape");
     ast::Evaluator evaluator;
-    TensorShape shape = evaluator.getShape(expr->node.get());
+    TensorShape shape = evaluator.getShape(expr->node);
     return new plaidml_shape{shape};
   });
 }
@@ -173,9 +163,12 @@ void plaidml_expr_bind_dims(  //
     plaidml_dim_expr** dims) {
   return ffi_wrap_void(err, [&] {
     IVLOG(3, "plaidml_expr_bind_dims> " << expr->node->str());
+    llvm::SmallVector<ast::DimNodePtr*, 8> into;
     for (size_t i = 0; i < rank; i++) {
-      dims[i]->node = std::make_shared<ast::DimNodeRef>(expr->node, i);
+      into.push_back(&dims[i]->node);
     }
+    ast::Evaluator evaluator;
+    evaluator.bindDims(expr->node, into);
   });
 }
 
@@ -286,13 +279,20 @@ plaidml_expr* plaidml_expr_element(  //
   });
 }
 
-plaidml_expr* plaidml_expr_trace(  //
-    plaidml_error* err,            //
-    plaidml_expr* expr,            //
-    const char* msg) {
+plaidml_expr* plaidml_expr_pragma(  //
+    plaidml_error* err,             //
+    plaidml_expr* expr,             //
+    const char* op,                 //
+    size_t nattrs,                  //
+    plaidml_attr** raw_attrs) {
   return ffi_wrap<plaidml_expr*>(err, nullptr, [&] {
-    IVLOG(3, "plaidml_expr_trace");
-    return new plaidml_expr{std::make_shared<ast::ExprNodeTrace>(expr->node, msg)};
+    IVLOG(3, "plaidml_expr_pragma");
+    llvm::StringMap<ast::VarNodePtr> attrs;
+    for (size_t i = 0; i < nattrs; i++) {
+      plaidml_attr* attr = raw_attrs[i];
+      attrs[attr->key] = attr->value->node;
+    }
+    return new plaidml_expr{std::make_shared<ast::ExprNodePragma>(expr->node, op, attrs)};
   });
 }
 

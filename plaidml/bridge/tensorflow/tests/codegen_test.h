@@ -25,7 +25,7 @@ limitations under the License.
 #include "plaidml/edsl/edsl.h"
 #include "plaidml/testenv.h"
 
-using plaidml::edsl::MultiBuffer;
+using plaidml::MultiBuffer;
 
 namespace zoo = plaidml::zoo;
 
@@ -40,14 +40,14 @@ MultiBuffer convertBuffer(const zoo::DataUnion& data);
 std::vector<char> ReadFile(const std::string& path);
 
 struct TestCaseIO {
-  std::vector<::plaidml::edsl::MultiBuffer> inputs;
-  std::vector<::plaidml::edsl::MultiBuffer> outputs;
+  std::vector<::plaidml::MultiBuffer> inputs;
+  std::vector<::plaidml::MultiBuffer> outputs;
 };
 
 using TestCases = std::vector<TestCaseIO>;
 
 // Tests that verify IR emitted by the PLAIDML backend is as expected.
-class PlaidMLCodegenTest : public ::plaidml::edsl::TestFixture {
+class PlaidMLCodegenTest : public ::plaidml::TestFixture {
  protected:
   // Compiles hlo_module with the JIT compiler.
   ::plaidml::Program CompileToProgram(std::unique_ptr<HloModule> hlo_module);

@@ -19,11 +19,15 @@
 #include "mlir/Transforms/Passes.h"
 
 #include "pmlc/compiler/registry.h"
+#include "pmlc/conversion/comp_to_llvm/passes.h"
 #include "pmlc/conversion/gpu/lowering.h"
+#include "pmlc/conversion/gpu_to_comp/passes.h"
 #include "pmlc/conversion/gpu_to_spirv/passes.h"
 #include "pmlc/conversion/pxa_to_affine/passes.h"
 #include "pmlc/conversion/stdx_to_llvm/passes.h"
 #include "pmlc/conversion/tile_to_pxa/passes.h"
+#include "pmlc/dialect/comp/ir/types.h"
+#include "pmlc/dialect/comp/transforms/passes.h"
 #include "pmlc/dialect/pxa/transforms/passes.h"
 #include "pmlc/dialect/stdx/ir/ops.h"
 #include "pmlc/dialect/stdx/transforms/passes.h"
@@ -37,6 +41,7 @@ using namespace mlir; // NOLINT[build/namespaces]
 namespace pmlc::target::intel_gen {
 
 namespace pxa = pmlc::dialect::pxa;
+namespace comp = pmlc::dialect::comp;
 
 namespace {
 
@@ -133,8 +138,21 @@ void pipelineBuilder(OpPassManager &pm) {
 
   // Do subgroup or accumulation
   pm.addPass(pmlc::dialect::pxa::createSubgroupsPass());
-  // pm.addPass(pmlc::dialect::pxa::createTileAccumulatePass());
-  pm.addPass(pmlc::dialect::pxa::createAffineNormalizePass(/*promote=*/false));
+  pm.addPass(pmlc::dialect::pxa::createAffineNormalizePass());
+  pm.addPass(createCanonicalizerPass());
+  pm.addPass(createCSEPass());
+
+  // Do tiled fusion
+  pm.addPass(pxa::createFusionPass(/*memoryActivityThreshold=*/0,
+                                   /*exactlyMatch=*/false, /*tiledFusion=*/true,
+                                   /*loopDepth=*/3));
+  pm.addPass(pxa::createAffineNormalizePass());
+  pm.addPass(createCanonicalizerPass());
+  pm.addPass(pxa::createMemRefDataFlowOptPass(/*onlyParallelNested=*/true));
+  pm.addPass(createCanonicalizerPass());
+  pm.addPass(pxa::createLocalizePass());
+  pm.addPass(pxa::createResizeTmpsPass(/*onlyParallelNested=*/true));
+  pm.addPass(pxa::createAffineNormalizePass());
   pm.addPass(createCanonicalizerPass());
   pm.addPass(createCSEPass());
 
@@ -149,8 +167,8 @@ void pipelineBuilder(OpPassManager &pm) {
 
   // Unroll affine.for loops.
   pm.addPass(createLoopUnrollPass(
-                      /*unrollFactor=*/256,
-                      /*unrollUpToFactor=*/true));
+      /*unrollFactor=*/256,
+      /*unrollUpToFactor=*/true));
   pm.addPass(createCanonicalizerPass());
   pm.addPass(createCSEPass());
 
@@ -179,6 +197,12 @@ void pipelineBuilder(OpPassManager &pm) {
   // Do kernel outlining
   pm.addPass(conversion::gpu::createGpuKernelOutliningPass());
 
+  // Convert GPU to comp.
+  pm.addPass(pmlc::conversion::gpu_to_comp::createConvertGpuToCompPass(
+      comp::ExecEnvRuntime::Vulkan, /*memorySpace=*/0));
+  pm.addPass(comp::createExecEnvCoalescingPass());
+  pm.addPass(comp::createMinimizeAllocationsPass());
+
   // GPU to SPIR-V.
   pm.addPass(createLegalizeStdOpsForSPIRVLoweringPass());
   pm.addPass(createCanonicalizerPass());
@@ -189,8 +213,8 @@ void pipelineBuilder(OpPassManager &pm) {
   pm.addPass(spirv::createLowerABIAttributesPass());
   pm.addPass(spirv::createUpdateVersionCapabilityExtensionPass());
 
-  // GPU to Vulkan.
-  pm.addPass(conversion::gpu::createConvertGpuLaunchFuncToVulkanCallsPass());
+  // Comp to LLVM - Vulkan function calls.
+  pm.addPass(pmlc::conversion::comp_to_llvm::createConvertCompToVulkanPass());
 
   // Convert Vulkan calls to LLVM code
   pm.addPass(createConvertStandardToLLVM());

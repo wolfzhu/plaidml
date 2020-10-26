@@ -5,7 +5,9 @@
 #include <algorithm>
 #include <memory>
 #include <ostream>
+#include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -21,7 +23,6 @@ class IndexedTensor;
 class Tensor;
 class TensorDim;
 class TensorIndex;
-struct TensorRef;
 class Value;
 
 namespace details {
@@ -55,10 +56,7 @@ void into_vector(std::vector<T>* into, Head&& head, Tail&&... tail) {
 ///
 /// Initializes the PlaidML EDSL API.
 ///
-inline void init() {
-  plaidml::init();
-  ffi::call_void(plaidml_edsl_init);
-}
+inline void init() { plaidml::init(); }
 
 ///
 /// Lists the available targets.
@@ -219,6 +217,19 @@ struct Constraint {
   TensorDim rhs;
 };
 
+class TensorLens {
+ public:
+  TensorLens() = default;
+
+  TensorLens(const std::string& source, const std::string& target);
+
+  template <typename T>
+  std::vector<T> apply(const std::vector<T>& dims) const;
+
+ private:
+  std::vector<size_t> map;
+};
+
 ///
 /// \ingroup edsl_objects
 /// \class Tensor
@@ -317,6 +328,7 @@ class Tensor {
     for (size_t i = 0; i < dims.size(); i++) {
       raw_dims[i] = dims[i].as_ptr();
     }
+    raw_dims = lens_.apply(raw_dims);
     ffi::call_void(plaidml_expr_bind_dims, as_ptr(), raw_dims.size(), raw_dims.data());
   }
 
@@ -331,48 +343,22 @@ class Tensor {
   }
 
   ///
-  /// Get an element of an operation that returns a tuple (i.e. multlpe results).
+  /// Get an element of an operation that returns a tuple (i.e. multiple results).
   ///
   Tensor element(size_t ordinal) const;
+
+  Tensor use(const TensorLens& lens) const { return Tensor(*this, lens); }
 
   plaidml_expr* as_ptr() const { return ptr_.get(); }
 
   void* raw_ptr() const { return ffi::call<void*>(plaidml_expr_ptr, as_ptr()); }
 
  private:
+  Tensor(const Tensor& rhs, const TensorLens& lens) : ptr_(rhs.ptr_), lens_(lens) {}
+
+ private:
   std::shared_ptr<plaidml_expr> ptr_;
-};
-
-///
-/// \ingroup edsl_objects
-/// \struct TensorRef
-/// A reference to a Tensor
-///
-struct TensorRef {
-  ///
-  /// The `Tensor` that the `TensorRef` is referencing
-  ///
-  Tensor tensor;
-
-  ///
-  /// TensorRef constructor
-  ///
-  TensorRef(const Tensor& tensor) : tensor(tensor) {}  // NOLINT[runtime/explicit]
-
-  ///
-  /// TODO
-  ///
-  operator Tensor() const { return tensor; }
-
-  ///
-  /// TODO
-  ///
-  bool operator<(const TensorRef& rhs) const { return tensor.raw_ptr() < rhs.tensor.raw_ptr(); }
-
-  ///
-  /// TODO
-  ///
-  bool operator==(const TensorRef& rhs) const { return tensor.raw_ptr() == rhs.tensor.raw_ptr(); }
+  TensorLens lens_;
 };
 
 ///
@@ -421,6 +407,8 @@ inline IndexedTensor cond(const IndexedTensor& lhs, const IndexedTensor& rhs, co
 
 class Contraction {
  public:
+  explicit Contraction(const TensorLens& lens, const std::string& name = "") : name_(name), lens_(lens) {}
+
   explicit Contraction(const std::string& name = "") : name_(name) {}
 
   Contraction(const std::vector<TensorDim>& dims, const std::vector<TensorIndex>& idxs, const std::string& name = "")
@@ -493,6 +481,7 @@ class Contraction {
   IndexedTensor rhs_;
   plaidml_agg_op agg_op_;
   Tensor init_;
+  TensorLens lens_;
 };
 
 template <typename... Ts>
@@ -583,6 +572,9 @@ inline Tensor Contraction::build() {
     dims[i] = outDims_[i].as_ptr();
   }
 
+  idxs = lens_.apply(idxs);
+  dims = lens_.apply(dims);
+
   auto* ptr = ffi::call<plaidml_expr*>(  //
       plaidml_expr_contraction,          //
       agg_op_,                           //
@@ -626,14 +618,47 @@ inline Tensor Contraction::build() {
   return Tensor(ptr);
 }
 
+inline TensorLens::TensorLens(const std::string& source, const std::string& target) : map(source.size()) {
+  if (source.size() != target.size()) {
+    std::stringstream ss;
+    ss << "source and target rank mismatch: " << source << " != " << target;
+    throw std::runtime_error(ss.str());
+  }
+  for (unsigned i = 0; i < source.size(); i++) {
+    auto pos = target.find(source[i]);
+    if (pos == std::string::npos) {
+      std::stringstream ss;
+      ss << "source and target dims mismatch: " << source << " != " << target;
+      throw std::runtime_error(ss.str());
+    }
+    map[i] = pos;
+  }
+}
+
+template <typename T>
+inline std::vector<T> TensorLens::apply(const std::vector<T>& dims) const {
+  if (map.empty()) {
+    return dims;
+  }
+  if (dims.size() != map.size()) {
+    throw std::runtime_error("rank mismatch in TensorLens apply");
+  }
+  std::vector<T> ret(dims.size());
+  for (unsigned i = 0; i < dims.size(); i++) {
+    ret[i] = dims[map[i]];
+  }
+  return ret;
+}
+
 template <typename... Ts>
 inline IndexedTensor Tensor::operator()(Ts... idxs) const {
   std::vector<TensorIndex> vec;
   details::into_vector(&vec, std::forward<Ts>(idxs)...);
-  return IndexedTensor(*this, vec);
+  return IndexedTensor(*this, lens_.apply(vec));
 }
+
 inline IndexedTensor Tensor::operator()(const std::vector<TensorIndex>& idxs) const {
-  return IndexedTensor(*this, idxs);
+  return IndexedTensor(*this, lens_.apply(idxs));
 }
 
 inline Tensor Tensor::element(size_t ordinal) const {
@@ -688,10 +713,10 @@ Tensor intrinsic(const std::string& fn, Ts... args) {
 }
 
 ///
-/// \defgroup edsl_primitives EDSL Primitives
+/// \defgroup edsl_intrinsics EDSL Intrinsics
 ///
 
-/// \addtogroup edsl_primitives
+/// \addtogroup edsl_intrinsics
 /// @{
 
 ///
@@ -934,13 +959,6 @@ inline Tensor tan(const Tensor& x) { return intrinsic("tan", x); }
 /// \return Tensor
 ///
 inline Tensor tanh(const Tensor& x) { return intrinsic("tanh", x); }
-
-///
-/// Adds a tracepoint to the graph
-///
-inline Tensor trace(const Tensor& x, const std::string& msg) {
-  return Tensor{ffi::call<plaidml_expr*>(plaidml_expr_trace, x.as_ptr(), msg.c_str())};
-}
 
 /// @}
 
@@ -1234,6 +1252,26 @@ inline std::ostream& operator<<(std::ostream& os, const Value& x) {
   os << x.str();
   return os;
 }
+
+using PragmaAttrs = std::unordered_map<std::string, Value>;
+
+inline Tensor pragma(const Tensor& tensor, const std::string& op, const PragmaAttrs& attrs) {
+  std::vector<plaidml_attr> elts;
+  std::vector<plaidml_attr*> ptrs;
+  elts.reserve(attrs.size());
+  ptrs.reserve(attrs.size());
+  for (const auto& kvp : attrs) {
+    plaidml_attr attr{kvp.first.c_str(), kvp.second.as_ptr()};
+    elts.push_back(attr);
+    ptrs.push_back(&elts.back());
+  }
+  return Tensor{ffi::call<plaidml_expr*>(plaidml_expr_pragma, tensor.as_ptr(), op.c_str(), elts.size(), ptrs.data())};
+}
+
+///
+/// Adds a tracepoint to the graph
+///
+inline Tensor trace(const Tensor& x, const std::string& msg) { return pragma(x, "trace", {{"msg", Value(msg)}}); }
 
 }  // namespace edsl
 }  // namespace plaidml

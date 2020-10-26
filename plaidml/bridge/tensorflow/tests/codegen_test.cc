@@ -22,9 +22,10 @@ limitations under the License.
 #include "plaidml/bridge/tensorflow/service/compiler.h"
 #include "plaidml/bridge/tensorflow/tests/archive_generated.h"
 #include "plaidml/edsl/edsl.h"
+#include "plaidml/testenv.h"
 
-using plaidml::edsl::MultiBuffer;
-using plaidml::edsl::TensorBuffers;
+using plaidml::MultiBuffer;
+using plaidml::TensorBuffers;
 
 namespace zoo = plaidml::zoo;
 
@@ -91,7 +92,7 @@ Status PlaidMLCodegenTest::CompileAndCheck(std::unique_ptr<HloModule> hlo_module
   VLOG(2) << "Evaluating results";
 
   for (const TestCaseIO& io : testcases) {
-    checkProgram(program, io.inputs, io.outputs);
+    checkClose(program, io.inputs, io.outputs);
   }
 
   return Status::OK();
