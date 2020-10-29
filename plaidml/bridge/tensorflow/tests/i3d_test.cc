@@ -39,7 +39,7 @@ TEST_P(PlaidMLI3DOperationTest, SimpleI3D) {
   std::vector<MultiBuffer> outputs;
 
   std::vector<float> const_0 = {0};
-  for (int i = 0; i < 258; i++) {
+  for (int i = 0; i < 30; i++) {
     inputs.emplace_back(const_0);
   }
 
@@ -56,9 +56,11 @@ TEST_P(PlaidMLI3DOperationTest, SimpleI3D) {
     outputs.emplace_back(convertBuffer(buffer->data));
   }
 
-  auto hlo_module = HloRunner::ReadModuleFromHloTextFile("plaidml/bridge/tensorflow/tests/i3d_frozen_module.hlo.txt", DebugOptions()).ValueOrDie();
+  auto hlo_module =
+      HloRunner::ReadModuleFromBinaryProtoFile("plaidml/bridge/tensorflow/tests/i3d_hlo.pb", DebugOptions())
+          .ValueOrDie();
 
-  CompileAndCheck(std::move(hlo_module), {{inputs, outputs}});
+  CompileAndCheck(std::move(hlo_module), {{inputs, outputs}}, /*tolerance=*/1e-03);
 }
 
 std::vector<I3DTestSpec> GetI3DTestCases() {

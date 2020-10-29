@@ -87,7 +87,7 @@ std::string ExprNodeConstFloat::str() const {
 
 ExprNodeConstTensor::ExprNodeConstTensor(const util::BufferPtr &buffer,
                                          llvm::StringRef name)
-    : buffer(buffer) {}
+    : buffer(buffer), name(name) {}
 
 std::string ExprNodeConstTensor::str() const { return "constant_tensor"; }
 

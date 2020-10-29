@@ -26,13 +26,19 @@ def plaidml_tf_workspace():
         name = "tfhub_i3d_kinetics_400",
         url = "https://storage.googleapis.com/tfhub-modules/deepmind/i3d-kinetics-400/1.tar.gz",
         sha256 = "bafe29bb4528badad428207d8fe86ca2a998b5b1386b82e42175339f12ea2ff5",
-        build_file = clean_dep("//vendor/tensorflow:tfhub_i3d_kinetics_400.BUILD"),
+        build_file = clean_dep("//vendor/tensorflow:tfhub_global.BUILD"),
     )
 
     http_archive(
-        name = "kinetics-i3d",
-        url = "https://github.com/deepmind/kinetics-i3d/archive/efebe2eb948cb8a3d2601b6a7ee1af9986a4aedf.zip",
-        sha256 = "4c7d9a32390a7b49865444beae96278c264b5eab8e111e63b8e20753e3ea3dde",
-        strip_prefix = "kinetics-i3d-efebe2eb948cb8a3d2601b6a7ee1af9986a4aedf",
-        build_file = clean_dep("//vendor/tensorflow:kinetics-i3d.BUILD"),
+        name = "tfhub_resnet152",
+        url = "https://storage.googleapis.com/tfhub-modules/deepmind/local-linearity/imagenet/1.tar.gz",
+        sha256 = "12b60e87833b67dc9f0ee8559de16b5a44b6db2cf0398ae633fb2f8eed66f7f3",
+        build_file = clean_dep("//vendor/tensorflow:tfhub_global.BUILD"),
+    )
+
+    http_archive(
+        name = "tfhub_mobilenet",
+        url = "https://storage.googleapis.com/tfhub-modules/google/imagenet/mobilenet_v1_100_224/quantops/classification/3.tar.gz",
+        sha256 = "d24047207050e5bf8c23aea638a5032cbf4f25e65fa28827c568984854ec3ffd",
+        build_file = clean_dep("//vendor/tensorflow:tfhub_global.BUILD"),
     )

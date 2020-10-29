@@ -72,6 +72,6 @@ tf_workspace(
     tf_repo_name = "org_tensorflow",
 )
 
-load("//vendor/models:workspace.bzl", "resnext50_workspace")
+load("//vendor/models:workspace.bzl", "models_workspace")
 
-resnext50_workspace()
+models_workspace()

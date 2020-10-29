@@ -52,8 +52,8 @@ class PlaidMLCodegenTest : public ::plaidml::TestFixture {
   // Compiles hlo_module with the JIT compiler.
   ::plaidml::Program CompileToProgram(std::unique_ptr<HloModule> hlo_module);
 
-  Status CompileAndCheck(std::unique_ptr<HloModule> hlo_module, const TestCases& testcases);
-  Status CompileAndCheck(std::unique_ptr<HloComputation> entry_computation, const TestCases& testcases);
+  Status CompileAndCheck(std::unique_ptr<HloModule> hlo_module, const TestCases& testcases, double tolerance);
+  Status CompileAndCheck(std::unique_ptr<HloComputation> entry_computation, const TestCases& testcases, double tolerance);
 };
 
 }  // namespace plaidml

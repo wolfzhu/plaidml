@@ -25,6 +25,7 @@ struct PassInfo {
 struct ConstantArgument {
   mlir::Type type;
   util::BufferPtr buffer;
+  llvm::StringRef name = "";
 };
 
 struct Program;

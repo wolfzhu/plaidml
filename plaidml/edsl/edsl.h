@@ -671,7 +671,7 @@ inline Tensor Constant(    //
   auto* ptr = ffi::call<plaidml_expr*>(  //
       plaidml_expr_constant,             //
       buffer.as_ptr(),                   //
-      name.c_str());
+      name.data());
   return Tensor(ptr);
 }
 

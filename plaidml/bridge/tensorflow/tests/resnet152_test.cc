@@ -20,27 +20,26 @@ namespace xla {
 namespace plaidml {
 namespace {
 
-struct ResNextTestSpec {
+struct ResNetTestSpec {
   PrimitiveType primitive_type;
 };
 
-string ResNextTestSpecToString(const ::testing::TestParamInfo<ResNextTestSpec>& info) {
+string ResNetTestSpecToString(const ::testing::TestParamInfo<ResNetTestSpec>& info) {
   return PrimitiveType_Name(info.param.primitive_type);
 }
 
-class PlaidMLResNextOperationTest : public PlaidMLCodegenTest, public ::testing::WithParamInterface<ResNextTestSpec> {};
+class PlaidMLResNetOperationTest : public PlaidMLCodegenTest, public ::testing::WithParamInterface<ResNetTestSpec> {};
 
-TEST_P(PlaidMLResNextOperationTest, ResNext50) {
-  auto data = ReadFile("plaidml/bridge/tensorflow/tests/resnext.pml");
+TEST_P(PlaidMLResNetOperationTest, SimpleResNet) {
+  auto data = ReadFile("plaidml/bridge/tensorflow/tests/resnet152.pml");
   zoo::ArchiveT archive;
   zoo::GetArchive(data.data())->UnPackTo(&archive);
 
   std::vector<MultiBuffer> inputs;
   std::vector<MultiBuffer> outputs;
 
-  // FIXME: Placeholders created for the purpose of internal computations are needlessly becoming inputs to the Program.
   std::vector<float> const_0 = {0};
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 10; i++) {
     inputs.emplace_back(const_0);
   }
 
@@ -57,21 +56,19 @@ TEST_P(PlaidMLResNextOperationTest, ResNext50) {
     outputs.emplace_back(convertBuffer(buffer->data));
   }
 
-  auto hlo_module =
-      HloRunner::ReadModuleFromBinaryProtoFile("plaidml/bridge/tensorflow/tests/resnext_hlo.pb", DebugOptions())
-          .ValueOrDie();
+  auto hlo_module = HloRunner::ReadModuleFromBinaryProtoFile("plaidml/bridge/tensorflow/tests/resnet152_hlo.pb", DebugOptions()).ValueOrDie();
 
-  CompileAndCheck(std::move(hlo_module), {{inputs, outputs}}, /*tolerance=*/1e-02);
+  CompileAndCheck(std::move(hlo_module), {{inputs, outputs}}, /*tolerance=*/1e-03);
 }
 
-std::vector<ResNextTestSpec> GetResNextTestCases() {
-  std::vector<ResNextTestSpec> result;
+std::vector<ResNetTestSpec> GetResNetTestCases() {
+  std::vector<ResNetTestSpec> result;
   result.push_back({F32});
   return result;
 }
 
-INSTANTIATE_TEST_SUITE_P(All, PlaidMLResNextOperationTest, ::testing::ValuesIn(GetResNextTestCases()),
-                         ResNextTestSpecToString);
+INSTANTIATE_TEST_SUITE_P(All, PlaidMLResNetOperationTest, ::testing::ValuesIn(GetResNetTestCases()), ResNetTestSpecToString);
+
 }  // namespace
 }  // namespace plaidml
 }  // namespace xla
