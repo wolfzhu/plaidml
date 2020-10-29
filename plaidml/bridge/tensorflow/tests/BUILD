@@ -149,6 +149,7 @@ tf_cc_test(
     srcs = ["i3d_test.cc"],
     data = [
         ":i3d_test_genrule",
+        "i3d_frozen_module.hlo.txt",
     ],
     extra_copts = ["-fexceptions"],
     linkstatic = 1,
@@ -160,6 +161,7 @@ tf_cc_test(
         ":codegen_test",
         "//plaidml/bridge/tensorflow/service:compiler",
         "//plaidml/bridge/tensorflow/service:graph_util",
+        "@org_tensorflow//tensorflow/compiler/xla/service:hlo_runner",
     ],
 )
 
@@ -220,6 +222,7 @@ tf_cc_test(
     data = [
         ":resnext_test_genrule",
 	":resnext_extract_weights",
+	"resnext_frozen_module.hlo.txt",
     ],
     extra_copts = ["-fexceptions"],
     linkstatic = 1,
@@ -231,6 +234,7 @@ tf_cc_test(
         ":codegen_test",
         "//plaidml/bridge/tensorflow/service:compiler",
         "//plaidml/bridge/tensorflow/service:graph_util",
+	"@org_tensorflow//tensorflow/compiler/xla/service:hlo_runner",
     ],
 )
 

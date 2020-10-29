@@ -6,13 +6,14 @@
 
 #include "flatbuffers/flatbuffers.h"
 #include "tensorflow/compiler/xla/service/hlo_parser.h"
+#include "tensorflow/compiler/xla/service/hlo_runner.h"
 #include "tensorflow/compiler/xla/tests/test_utils.h"
 
 #include "plaidml/bridge/tensorflow/service/graph_util.h"
 #include "plaidml/bridge/tensorflow/tests/archive_generated.h"
 #include "plaidml/bridge/tensorflow/tests/codegen_test.h"
 
-using plaidml::edsl::MultiBuffer;
+using plaidml::MultiBuffer;
 namespace zoo = plaidml::zoo;
 
 namespace xla {
@@ -37,6 +38,11 @@ TEST_P(PlaidMLResNextOperationTest, SimpleResNext) {
   std::vector<MultiBuffer> inputs;
   std::vector<MultiBuffer> outputs;
 
+  std::vector<float> const_0 = {0};
+  for (int i = 0; i < 4; i++) {
+    inputs.emplace_back(const_0);
+  }
+
   VLOG(0) << "Archive: " << archive.name;
   VLOG(0) << "Inputs: " << archive.inputs.size();
   for (const auto& buffer : archive.inputs) {
@@ -50,13 +56,10 @@ TEST_P(PlaidMLResNextOperationTest, SimpleResNext) {
     outputs.emplace_back(convertBuffer(buffer->data));
   }
 
-  std::vector<MultiBuffer> args = {inputs[0]};
+  //auto hlo_module = HloRunner::ReadModuleFromBinaryProtoFile("plaidml/bridge/tensorflow/tests/resnext_frozen_module.hlo.pb", DebugOptions()).ValueOrDie();
+  auto hlo_module = HloRunner::ReadModuleFromHloTextFile("plaidml/bridge/tensorflow/tests/resnext_frozen_module.hlo.txt", DebugOptions()).ValueOrDie();
 
-  StringRef saved_model_dir("plaidml/bridge/tensorflow/tests/resnext50_tf_saved_model");
-  auto frozen_graph_def = FreezeGraph(saved_model_dir, {"data"}, {"pool1"}).ValueOrDie();
-  auto hlo_module = LowerFrozenGraphToHlo(&frozen_graph_def, {"data"}, {"outputs"}).ValueOrDie();
-
-  CompileAndCheck(std::move(hlo_module), {{args, outputs}});
+  CompileAndCheck(std::move(hlo_module), {{inputs, outputs}});
 }
 
 std::vector<ResNextTestSpec> GetResNextTestCases() {

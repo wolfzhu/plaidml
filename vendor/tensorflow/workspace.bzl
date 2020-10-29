@@ -14,9 +14,9 @@ def plaidml_tf_workspace():
 
     http_archive(
         name = "org_tensorflow",
-        url = "https://github.com/tensorflow/tensorflow/archive/ffe4c23e975cc410dcbe99236f5ae2108ada2360.zip",
-        sha256 = "051ba1c6bbb14348b2a80e78364fb7dbe06fc09a571a14077e8d033030546aba",
-        strip_prefix = "tensorflow-ffe4c23e975cc410dcbe99236f5ae2108ada2360",
+        url = "https://github.com/tensorflow/tensorflow/archive/ca0607c19884fc8eb0a4d32a1fe58cc42ced8737.zip",
+        sha256 = "eb70004992adf342b5600554995ac453f8a71820cae1ab59ade9d88612f1210f",
+        strip_prefix = "tensorflow-ca0607c19884fc8eb0a4d32a1fe58cc42ced8737",
         link_files = {
             clean_dep("//vendor/tensorflow:third_party/py/python_configure.bzl"): "third_party/py/python_configure.bzl",
         },

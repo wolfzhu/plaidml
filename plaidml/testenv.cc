@@ -2,11 +2,14 @@
 
 #include "plaidml/testenv.h"
 
+#include <chrono>
+
 #include "llvm/ADT/STLExtras.h"
 
 #include "plaidml/edsl/edsl.h"
 #include "plaidml/exec/exec.h"
 #include "plaidml/op/op.h"
+#include "pmlc/util/logging.h"
 
 DEFINE_string(plaidml_device, "llvm_cpu.0", "The device to run tests on");
 DEFINE_string(plaidml_target, "llvm_cpu", "The compilation target");
@@ -122,7 +125,11 @@ void TestFixture::checkExact(Program program, const TensorBuffers& inputs, const
 void TestFixture::checkClose(Program program, const TensorBuffers& inputs, const TensorBuffers& expected,
                              double tolerance) {
   Runner runner(program);
+  auto start_time = std::chrono::high_resolution_clock::now();
   runner.run(inputs);
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  IVLOG(0, "DURATION: " << std::to_string(duration.count()) << "ms");
   runner.checkClose(expected, tolerance);
 }
 

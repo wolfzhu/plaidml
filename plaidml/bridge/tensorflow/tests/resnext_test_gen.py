@@ -10,7 +10,7 @@ import tempfile
 import numpy as np
 
 import tensorflow as tf
-from flatbuffers.python import flatbuffers
+import flatbuffers
 from plaidml.bridge.tensorflow.tests import archive_py_generated as schema
 from plaidml.bridge.tensorflow.tests import util
 

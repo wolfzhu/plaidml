@@ -6,7 +6,7 @@ import tempfile
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
-from flatbuffers.python import flatbuffers
+import flatbuffers
 
 from plaidml.bridge.tensorflow.tests import archive_py_generated as schema
 from plaidml.bridge.tensorflow.tests import util
@@ -19,7 +19,7 @@ def main(args):
         # Initialize weights in this session
         sess.run(tf.compat.v1.global_variables_initializer())
         # Create placeholders for graphdef generation
-        input_shape = [1, 32, 224, 224, 3]
+        input_shape = [1, 79, 224, 224, 3]
         x = tf.compat.v1.placeholder(tf.float32, shape=input_shape)
         y = layer(x)
         output_graph_def = tf.compat.v1.graph_util.convert_variables_to_constants(
