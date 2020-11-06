@@ -23,7 +23,6 @@ limitations under the License.
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "llvm/ADT/STLExtras.h"
 #include "tensorflow/compiler/xla/service/hlo_instruction.h"
 #include "tensorflow/compiler/xla/service/hlo_opcode.h"
 #include "tensorflow/compiler/xla/service/pattern_matcher.h"
@@ -428,25 +427,25 @@ StatusOr<::plaidml::Program> PlaidMLCompiler::ProgramFromHloModule(std::unique_p
           // TODO: make sure optional operands are passed correctly
           auto op = plaidml_op::convolution(instr_map[operand_ids[0]], instr_map[operand_ids[1]]);
           auto conv_dnums = instruction->convolution_dimension_numbers();
-	  // Infer tensor layouts from conv dimension numbers
-	  char batch_dim = 'n';
-	  char spatial_dim = 'x';
-	  char input_feature_dim = 'c';
-	  char output_feature_dim = 'k';
+          // Infer tensor layouts from conv dimension numbers
+          char batch_dim = 'n';
+          char spatial_dim = 'x';
+          char input_feature_dim = 'c';
+          char output_feature_dim = 'k';
           std::vector<char> input_dims(2 + conv_dnums.input_spatial_dimensions().size());
-	  std::string input_layout;
+          std::string input_layout;
           input_dims[conv_dnums.input_batch_dimension()] = batch_dim;
           input_dims[conv_dnums.input_feature_dimension()] = input_feature_dim;
           for (int64 i = 0; i < conv_dnums.input_spatial_dimensions().size(); ++i) {
             input_dims[conv_dnums.input_spatial_dimensions(i)] = spatial_dim;
           }
-	  char last_visited = ' ';
-	  for (char cur_dim : input_dims) {
-              if (cur_dim != last_visited) {
-                input_layout += cur_dim;
-	      }
-	      last_visited = cur_dim;
-	  }
+          char last_visited = ' ';
+          for (char cur_dim : input_dims) {
+            if (cur_dim != last_visited) {
+              input_layout += cur_dim;
+            }
+            last_visited = cur_dim;
+          }
           std::vector<char> kernel_dims(2 + conv_dnums.kernel_spatial_dimensions().size());
           std::string kernel_layout;
           kernel_dims[conv_dnums.kernel_input_feature_dimension()] = input_feature_dim;
@@ -456,14 +455,14 @@ StatusOr<::plaidml::Program> PlaidMLCompiler::ProgramFromHloModule(std::unique_p
           }
           last_visited = ' ';
           for (char cur_dim : kernel_dims) {
-              if (cur_dim != last_visited) {
-                kernel_layout += cur_dim;
-              }
-              last_visited = cur_dim;
+            if (cur_dim != last_visited) {
+              kernel_layout += cur_dim;
+            }
+            last_visited = cur_dim;
           }
           VLOG(2) << "Input layout: " << input_layout;
           VLOG(2) << "Kernel layout: " << kernel_layout;
-	  // Set tensor layouts in the op
+          // Set tensor layouts in the op
           if (input_layout == "nxc") {
             op.input_layout(plaidml_op::TensorLayout::NXC);
           } else if (input_layout == "ncx") {
@@ -582,7 +581,7 @@ StatusOr<::plaidml::Program> PlaidMLCompiler::ProgramFromHloModule(std::unique_p
           // Default pool mode and pad mode
           plaidml_op::PoolMode pm = plaidml_op::PoolMode::AVG;
           plaidml_op::AutoPadMode am = plaidml_op::AutoPadMode::EXPLICIT;
-	  // Infer tensor layout, then calculate the window
+          // Infer tensor layout, then calculate the window
           // This window is in NXC format: for example, a window of 1x2x2x1 translates to {2, 2} in the pooling op
           // Spatial rank in this case has to take NXC into account, so subtract 2
           auto raw_window = instruction->window();
