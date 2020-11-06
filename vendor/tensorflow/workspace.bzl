@@ -35,10 +35,3 @@ def plaidml_tf_workspace():
         sha256 = "12b60e87833b67dc9f0ee8559de16b5a44b6db2cf0398ae633fb2f8eed66f7f3",
         build_file = clean_dep("//vendor/tensorflow:tfhub_global.BUILD"),
     )
-
-    http_archive(
-        name = "tfhub_mobilenet",
-        url = "https://storage.googleapis.com/tfhub-modules/google/imagenet/mobilenet_v1_100_224/quantops/classification/3.tar.gz",
-        sha256 = "d24047207050e5bf8c23aea638a5032cbf4f25e65fa28827c568984854ec3ffd",
-        build_file = clean_dep("//vendor/tensorflow:tfhub_global.BUILD"),
-    )
