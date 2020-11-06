@@ -258,7 +258,7 @@ genrule(
     srcs = ["@models_resnext50//file"],
     outs = [
         "resnext.pml",
-	"resnext_hlo.pb"
+        "resnext_hlo.pb"
     ],
     cmd = "$(location :resnext_test_gen) $(location @models_resnext50//file) $(location resnext.pml) $(location resnext_hlo.pb)",
     tags = ["skip_windows"],
@@ -282,7 +282,7 @@ tf_cc_test(
         ":archive_cc_fbs",
         ":codegen_test",
         "//plaidml/bridge/tensorflow/service:compiler",
-	"@org_tensorflow//tensorflow/compiler/xla/service:hlo_runner",
+        "@org_tensorflow//tensorflow/compiler/xla/service:hlo_runner",
     ],
 )
 
