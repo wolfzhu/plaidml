@@ -344,7 +344,6 @@ TEST_F(CppEdsl, ConstAdd) {
   // clang-format off
   // CHECK-LABEL: CppEdsl.ConstAdd
   // CHECK: module @const_add
-  // CHECK: func @main(%{{.*}}: tensor<4xsi32> {tile.const = {{.*}} : index, tile.name = {{.*}}}, %{{.*}}: tensor<4xsi32> {tile.const = {{.*}} : index, tile.name = {{.*}}}) -> tensor<4xsi32>
   // CHECK: tile.add %{{.*}}, %{{.*}} : (tensor<4xsi32>, tensor<4xsi32>) -> tensor<4xsi32>
   // CHECK: return %{{.*}} : tensor<4xsi32>
   // clang-format on

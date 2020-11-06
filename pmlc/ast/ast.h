@@ -141,7 +141,6 @@ struct ExprNodeConstTensor : NodeBase<ExprNodeConstTensor, ExprNode> {
   using Base = NodeBase<ExprNodeConstTensor, ExprNode>;
 
   util::BufferPtr buffer;
-  llvm::StringRef name;
 
   explicit ExprNodeConstTensor(const util::BufferPtr &buffer,
                                llvm::StringRef name = "");
@@ -199,7 +198,6 @@ struct ExprNodeElement : NodeBase<ExprNodeElement, ExprNode> {
 struct ExprNodeInput : NodeBase<ExprNodeInput, ExprNode> {
   using Base = NodeBase<ExprNodeInput, ExprNode>;
 
-  llvm::StringRef name;
   util::TensorShape shape;
 
   explicit ExprNodeInput(const util::TensorShape &shape,
