@@ -161,7 +161,6 @@ tf_cc_test(
         ":archive_cc_fbs",
         ":codegen_test",
         "//plaidml/bridge/tensorflow/service:compiler",
-        "//plaidml/bridge/tensorflow/service:graph_util",
         "@org_tensorflow//tensorflow/compiler/xla/service:hlo_runner",
     ],
 )
@@ -228,7 +227,6 @@ tf_cc_test(
         ":archive_cc_fbs",
         ":codegen_test",
         "//plaidml/bridge/tensorflow/service:compiler",
-        "//plaidml/bridge/tensorflow/service:graph_util",
         "@org_tensorflow//tensorflow/compiler/xla/service:hlo_runner",
     ],
 )
@@ -284,7 +282,6 @@ tf_cc_test(
         ":archive_cc_fbs",
         ":codegen_test",
         "//plaidml/bridge/tensorflow/service:compiler",
-        "//plaidml/bridge/tensorflow/service:graph_util",
 	"@org_tensorflow//tensorflow/compiler/xla/service:hlo_runner",
     ],
 )

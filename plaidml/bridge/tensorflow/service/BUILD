@@ -13,22 +13,3 @@ cc_library(
         "@org_tensorflow//tensorflow/core:lib",
     ],
 )
-
-cc_library(
-    name = "graph_util",
-    srcs = ["graph_util.cc"],
-    hdrs = ["graph_util.h"],
-    tags = ["skip_windows"],
-    deps = [
-        "@llvm-project//llvm:Support",
-        "@org_tensorflow//tensorflow/cc/saved_model:loader",
-        "@org_tensorflow//tensorflow/cc/tools:freeze_saved_model",
-        "@org_tensorflow//tensorflow/compiler/tf2xla:tf2xla",
-        "@org_tensorflow//tensorflow/compiler/jit:xla_cpu_jit",
-        "@org_tensorflow//tensorflow/compiler/xla/client:client",
-        "@org_tensorflow//tensorflow/compiler/xla/service:hlo",
-        "@org_tensorflow//tensorflow/compiler/xla/service:hlo_parser",
-        "@org_tensorflow//tensorflow/core:lib",
-        "@org_tensorflow//tensorflow/core:session_options",
-    ],
-)
