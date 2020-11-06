@@ -9,7 +9,6 @@
 #include "tensorflow/compiler/xla/service/hlo_runner.h"
 #include "tensorflow/compiler/xla/tests/test_utils.h"
 
-#include "plaidml/bridge/tensorflow/service/graph_util.h"
 #include "plaidml/bridge/tensorflow/tests/archive_generated.h"
 #include "plaidml/bridge/tensorflow/tests/codegen_test.h"
 
