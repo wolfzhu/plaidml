@@ -21,7 +21,6 @@ limitations under the License.
 
 #include "plaidml/bridge/tensorflow/service/compiler.h"
 #include "plaidml/bridge/tensorflow/tests/archive_generated.h"
-#include "plaidml/edsl/edsl.h"
 #include "plaidml/testenv.h"
 
 using plaidml::MultiBuffer;
@@ -79,17 +78,15 @@ std::vector<char> ReadFile(const std::string& path) {
 }
 
 Status PlaidMLCodegenTest::CompileAndCheck(std::unique_ptr<HloComputation> entry_computation,
-                                           const TestCases& testcases,
-					   double tolerance) {
+                                           const TestCases& testcases, double tolerance) {
   HloModuleConfig cfg;
   auto hlo_module = absl::make_unique<HloModule>("module", cfg);
   hlo_module->AddEntryComputation(std::move(entry_computation));
   return CompileAndCheck(std::move(hlo_module), testcases, tolerance);
 }
 
-Status PlaidMLCodegenTest::CompileAndCheck(std::unique_ptr<HloModule> hlo_module,
-		                           const TestCases& testcases,
-					   double tolerance) {
+Status PlaidMLCodegenTest::CompileAndCheck(std::unique_ptr<HloModule> hlo_module, const TestCases& testcases,
+                                           double tolerance) {
   auto program = CompileToProgram(std::move(hlo_module));
 
   VLOG(2) << "Evaluating results";
