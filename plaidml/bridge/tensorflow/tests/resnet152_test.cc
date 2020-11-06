@@ -38,6 +38,7 @@ TEST_P(PlaidMLResNetOperationTest, SimpleResNet) {
   std::vector<MultiBuffer> inputs;
   std::vector<MultiBuffer> outputs;
 
+  // FIXME: Placeholders created for the purpose of internal computations are needlessly becoming inputs to the Program.
   std::vector<float> const_0 = {0};
   for (int i = 0; i < 10; i++) {
     inputs.emplace_back(const_0);
@@ -56,7 +57,9 @@ TEST_P(PlaidMLResNetOperationTest, SimpleResNet) {
     outputs.emplace_back(convertBuffer(buffer->data));
   }
 
-  auto hlo_module = HloRunner::ReadModuleFromBinaryProtoFile("plaidml/bridge/tensorflow/tests/resnet152_hlo.pb", DebugOptions()).ValueOrDie();
+  auto hlo_module =
+      HloRunner::ReadModuleFromBinaryProtoFile("plaidml/bridge/tensorflow/tests/resnet152_hlo.pb", DebugOptions())
+          .ValueOrDie();
 
   CompileAndCheck(std::move(hlo_module), {{inputs, outputs}}, /*tolerance=*/1e-03);
 }
@@ -67,7 +70,8 @@ std::vector<ResNetTestSpec> GetResNetTestCases() {
   return result;
 }
 
-INSTANTIATE_TEST_SUITE_P(All, PlaidMLResNetOperationTest, ::testing::ValuesIn(GetResNetTestCases()), ResNetTestSpecToString);
+INSTANTIATE_TEST_SUITE_P(All, PlaidMLResNetOperationTest, ::testing::ValuesIn(GetResNetTestCases()),
+                         ResNetTestSpecToString);
 
 }  // namespace
 }  // namespace plaidml

@@ -581,9 +581,8 @@ StatusOr<::plaidml::Program> PlaidMLCompiler::ProgramFromHloModule(std::unique_p
           // Default pool mode and pad mode
           plaidml_op::PoolMode pm = plaidml_op::PoolMode::AVG;
           plaidml_op::AutoPadMode am = plaidml_op::AutoPadMode::EXPLICIT;
-          // Infer tensor layout, then calculate the window
-          // This window is in NXC format: for example, a window of 1x2x2x1 translates to {2, 2} in the pooling op
-          // Spatial rank in this case has to take NXC into account, so subtract 2
+          // TODO: Infer tensor layout, then calculate the window
+          // Currently tensor layout is being assumed to be NXC, when that's not always the case
           auto raw_window = instruction->window();
           auto spatial_rank = raw_window.dimensions_size() - 2;
           std::vector<int> window_size;

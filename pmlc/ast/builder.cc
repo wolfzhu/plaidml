@@ -446,11 +446,10 @@ struct ProgramBuilder {
     size_t numInputs = inputTypes.size() - program->constants.size();
     for (size_t i = 0; i < program->constants.size(); i++) {
       funcOp.setArgAttr(numInputs + i, "tile.const", builder.getIndexAttr(i));
-      // TODO: why is tile.name working on python but not c++?
-      //if (!program->constants[i].name.empty()) {
-      //  funcOp.setArgAttr(numInputs + i, "tile.name",
-      //                    builder.getStringAttr(program->constants[i].name));
-      //}
+      if (!program->constants[i].name.empty()) {
+        funcOp.setArgAttr(numInputs + i, "tile.name",
+                          builder.getStringAttr(program->constants[i].name));
+      }
     }
     Block *body = funcOp.addEntryBlock();
     builder.setInsertionPointToStart(body);

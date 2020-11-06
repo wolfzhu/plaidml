@@ -38,6 +38,7 @@ TEST_P(PlaidMLI3DOperationTest, SimpleI3D) {
   std::vector<MultiBuffer> inputs;
   std::vector<MultiBuffer> outputs;
 
+  // FIXME: Placeholders created for the purpose of internal computations are needlessly becoming inputs to the Program.
   std::vector<float> const_0 = {0};
   for (int i = 0; i < 30; i++) {
     inputs.emplace_back(const_0);
