@@ -7,14 +7,14 @@ Unit tests can be written in one of two ways:
 ## Full-Sized Network Tests
 Full-sized networks contain pretrained weights that should be passed directly to the test. There is a multi-step process that will preserve weights for tests and reference implementations:
 1. Load a TensorFlow 1.x Saved Model 
-  - TensorFlow Hub Networks
-  Networks available through [TensorFlow Hub](tfhub.dev) can be instantiated using the [`hub.Module`](https://www.tensorflow.org/hub/api_docs/python/hub/Module) API.
-  - Non-TensorFlow Hub Networks
-  If you have a pretrained model available locally, it can be loaded using the [`tf.saved_model.load`](https://www.tensorflow.org/api_docs/python/tf/compat/v1/saved_model/load) API.
+    - TensorFlow Hub Networks  
+    Networks available through [TensorFlow Hub](tfhub.dev) can be instantiated using the [`hub.Module`](https://www.tensorflow.org/hub/api_docs/python/hub/Module) API.
+    - Non-TensorFlow Hub Networks  
+    If you have a pretrained model available locally, it can be loaded using the [`tf.saved_model.load`](https://www.tensorflow.org/api_docs/python/tf/compat/v1/saved_model/load) API.
 2. Freeze the network
   Networks can be frozen using the [`tf.graph_util.convert_weights_to_constants`](https://www.tensorflow.org/api_docs/python/tf/compat/v1/graph_util/convert_variables_to_constants) API. Freezing the network allows weights to be embedded into the model directly as constants. Note that this feature is currently only available in TF 1.x. 
 3. Convert the network into XLA HLO Protobuf
-  There are two environment variables, `XLA_FLAGS` and `TF_XLA_FLAGS`, which should be specified in order to convert a network to the XLA HLO Protobuf format. `TF_XLA_FLAGS` tells TensorFlow to use XLA, and `XLA_FLAGS` tells XLA to write a HLO Protobuf for use in the tests:
+  There are two environment variables, `XLA_FLAGS` and `TF_XLA_FLAGS`, which should be specified in order to convert a network to the XLA HLO Protobuf format. `TF_XLA_FLAGS` tells TensorFlow to use XLA, and `XLA_FLAGS` tells XLA to write a HLO Protobuf for use in the tests:  
   ```XLA_FLAGS "--xla_dump_to=/your/dump/location --xla_dump_hlo_as_proto" TF_XLA_FLAGS = "--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit"```
 # Validated Networks
 Below is a list of TensorFlow networks validated via the PlaidML backend:
