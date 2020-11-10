@@ -156,7 +156,9 @@ tf_cc_test(
     linkstatic = 1,
     tags = [
         "skip_windows",
+        "tf_nightly",
     ],
+    timeout = "eternal",
     deps = [
         ":archive_cc_fbs",
         ":codegen_test",
@@ -222,7 +224,9 @@ tf_cc_test(
     linkstatic = 1,
     tags = [
         "skip_windows",
+        "tf_nightly",
     ],
+    timeout = "eternal",
     deps = [
         ":archive_cc_fbs",
         ":codegen_test",
@@ -277,7 +281,9 @@ tf_cc_test(
     linkstatic = 1,
     tags = [
         "skip_windows",
+        "tf_nightly",
     ],
+    timeout = "eternal",
     deps = [
         ":archive_cc_fbs",
         ":codegen_test",
