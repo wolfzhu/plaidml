@@ -1,7 +1,11 @@
 // Copyright 2020 Intel Corporation
 //
 // N.B. When running via lit, we always use the llvm_cpu device.
-// RUN: cc_test --plaidml_device=llvm_cpu.0 --plaidml_target=llvm_cpu --generate_filecheck_input | FileCheck %s
+// RUN: cc_test \
+// RUN:   --plaidml_device=llvm_cpu.0 \
+// RUN:   --plaidml_target=llvm_cpu \
+// RUN:   --generate_filecheck_input \
+// RUN: | FileCheck %s
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -1533,6 +1537,25 @@ TEST_F(CppEdsl, Lens) {
   O = Transpose(I, "NM");
   program = makeProgram("transpose_nm", {I}, {O});
   checkExact(program, {input}, {expected});
+}
+
+TEST_F(CppEdsl, Layer) {
+  auto A = Placeholder(DType::FLOAT32, {10, 20});
+  Tensor O = layer("relu", [&]() {  //
+    return Relu(A);
+  });
+  auto program = makeProgram("relu", {A}, {O});
+  // clang-format off
+  // CHECK-LABEL: CppEdsl.Layer
+  // CHECK: module @relu
+  // CHECK: %[[X0:.*]] = layer.box "relu" (%[[arg1:.*]]) = (%{{.*}}) : (tensor<10x20xf32>) -> tensor<10x20xf32>
+  // CHECK:   %[[cst:.*]] = tile.constant(0.000000e+00 : f64) : tensor<f32>
+  // CHECK:   %[[X1:.*]] = tile.cmp_lt %[[arg1]], %[[cst]] : (tensor<10x20xf32>, tensor<f32>) -> tensor<10x20xi1>
+  // CHECK:   %[[X2:.*]] = tile.select %[[X1]], %[[cst]], %[[arg1]] : (tensor<10x20xi1>, tensor<f32>, tensor<10x20xf32>) -> tensor<10x20xf32>
+  // CHECK:   layer.return %[[X2]] : tensor<10x20xf32>
+  // CHECK: return %[[X0]] : tensor<10x20xf32>
+  // clang-format on
+  runProgram(program);
 }
 
 }  // namespace

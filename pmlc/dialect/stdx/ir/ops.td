@@ -104,17 +104,15 @@ def SubgroupBroadcastOp : StdX_Op<"subgroup_broadcast", [NoSideEffect, AllTypesM
   let verifier = ?;
 }
 
-def AnyVectorOrScalar : AnyTypeOf<[AnyStdScalar, AnyVector]> {} 
+def AnyVectorOrScalar : AnyTypeOf<[AnyStdScalar, AnyVector]> {}
+def SubgroupBlockReadOutputType : AnyTypeOf<[AnyStdScalar, AnyVector, AnyMemRef]> {}
 
-def SubgroupBlockReadINTELOp : StdX_Op<"subgroup_block_read_intel",
-     [TypesMatchWith<"result type matches element type of 'memref'",
-                     "memref", "result",
-                     "$_self.cast<mlir::MemRefType>().getElementType()">]> {
+def SubgroupBlockReadINTELOp : StdX_Op<"subgroup_block_read_intel", [NoSideEffect]> {
   let summary = "See intel_subgroups extension.";
   let arguments = (ins Arg<AnyMemRef, "the reference to subgroup block read from",
                            [MemRead]>:$memref,
                            Variadic<Index>:$indices);
-  let results = (outs AnyVectorOrScalar:$result);
+  let results = (outs SubgroupBlockReadOutputType:$result);
 
   let builders = [OpBuilder<
     "mlir::OpBuilder &, mlir::OperationState &result, mlir::Value memref,"
@@ -130,13 +128,10 @@ def SubgroupBlockReadINTELOp : StdX_Op<"subgroup_block_read_intel",
     operand_range getIndices() { return {operand_begin() + 1, operand_end()}; }
   }];
 
-  let assemblyFormat = "$memref `[` $indices `]` attr-dict `:` type($memref)";
+  let assemblyFormat = "$memref `[` $indices `]` attr-dict `:` type($memref)`,` type($result)";
 }
 
-def SubgroupBlockWriteINTELOp : StdX_Op<"subgroup_block_write_intel",
-     [TypesMatchWith<"type of 'value' matches element type of 'memref'",
-                     "memref", "value",
-                     "$_self.cast<mlir::MemRefType>().getElementType()">]> {
+def SubgroupBlockWriteINTELOp : StdX_Op<"subgroup_block_write_intel", [NoSideEffect]> {
   let summary = "See intel_subgroups extension.";
 
   let arguments = (ins AnyVectorOrScalar:$value,
@@ -162,7 +157,35 @@ def SubgroupBlockWriteINTELOp : StdX_Op<"subgroup_block_write_intel",
   }];
 
   let assemblyFormat = [{
-    $value `,` $memref `[` $indices `]` attr-dict `:` type($memref)
+    $value `,` $memref `[` $indices `]` attr-dict `:` type($value) `,` type($memref)
+  }];
+}
+
+def PackOp : StdX_Op<"pack", [NoSideEffect]> {
+  let summary = "Pack multiple values into a tuple";
+  let arguments = (ins Variadic<AnyType>:$in);
+  let results = (outs AnyTuple:$out);
+  let assemblyFormat = [{ $in `:` custom<TupleTypeAsm>(type($out), type($in)) attr-dict }];
+  let builders = [OpBuilder<
+    "mlir::OpBuilder &, mlir::OperationState &, mlir::ArrayRef<mlir::Value>">];
+  let extraClassDeclaration = [{
+    mlir::TupleType getTupleType() {
+      return out().getType().cast<mlir::TupleType>();
+    }
+  }];
+}
+
+def UnpackOp : StdX_Op<"unpack", [NoSideEffect]> {
+  let summary = "Pack multiple values into a tuple";
+  let arguments = (ins AnyTuple:$in);
+  let results = (outs Variadic<AnyType>:$out);
+  let assemblyFormat = [{ $in `:` custom<TupleTypeAsm>(type($in), type($out)) attr-dict }];
+  let builders = [OpBuilder<
+    "mlir::OpBuilder &, mlir::OperationState &, mlir::Value">];
+  let extraClassDeclaration = [{
+    mlir::TupleType getTupleType() {
+      return in().getType().cast<mlir::TupleType>();
+    }
   }];
 }
 

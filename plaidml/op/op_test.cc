@@ -262,7 +262,7 @@ ConvolutionParams convParams[] = {
     },
 };
 
-INSTANTIATE_TEST_SUITE_P(Suite, ConvolutionTest, ::testing::ValuesIn(convParams));
+INSTANTIATE_TEST_CASE_P(Suite, ConvolutionTest, ::testing::ValuesIn(convParams));
 
 TEST_F(OpTest, CumProd) {
   auto I = Placeholder(DType::FLOAT32, {7, 7, 3, 64}, "I");
@@ -533,7 +533,7 @@ TEST_F(OpTest, ReorgYoloNHWC) {
 
 TEST_F(OpTest, Repeat) {
   auto A = Placeholder(DType::FLOAT32, {32, 1, 4, 1}, "A");
-  auto X = op::repeat(A, 3, 2);
+  auto X = op::repeat(A).count(3).axis(2);
   auto program = makeProgram("repeat", {A}, {X});
   runProgram(program);
 }

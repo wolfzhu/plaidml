@@ -117,12 +117,14 @@ enum class PadMode {
 struct Integers {
   Integers(const std::vector<int>& elts)  // NOLINT[runtime/explicit]
       : value(edsl::make_tuple(elts)) {}
-  Integers(const std::vector<size_t>& elts)  // NOLINT[runtime/explicit]
-      : value(edsl::make_tuple(elts)) {}
+  Integers(const std::vector<size_t>& elts) {  // NOLINT[runtime/explicit]
+    std::vector<int64_t> casted(elts.begin(), elts.end());
+    value = edsl::make_tuple(casted);
+  }
   Integers(const std::initializer_list<int>& elts)  // NOLINT[runtime/explicit]
-      : value(edsl::make_tuple(std::vector<int>(elts))) {}
+      : Integers(std::vector<int>(elts)) {}
   Integers(const std::initializer_list<size_t>& elts)  // NOLINT[runtime/explicit]
-      : value(edsl::make_tuple(std::vector<size_t>(elts))) {}
+      : Integers(std::vector<size_t>(elts)) {}
 
   edsl::Value value;
 };
@@ -599,10 +601,35 @@ inline edsl::Tensor reorg_yolo(const edsl::Tensor& I, int stride, bool decrease,
   return details::op("reorg_yolo", args).as_tensor();
 }
 
-inline edsl::Tensor repeat(const edsl::Tensor& I, int repeats, int axis) {
-  auto args = edsl::make_tuple(I, repeats, axis);
-  return details::op("repeat", args).as_tensor();
-}
+class repeat {
+ public:
+  explicit repeat(const edsl::Tensor& I) : I_(I) {}
+
+  repeat& count(int count) {
+    count_ = edsl::Value(count);
+    return *this;
+  }
+
+  repeat& count(const edsl::TensorDim& count) {
+    count_ = edsl::Value(count);
+    return *this;
+  }
+
+  repeat& axis(int axis) {
+    axis_ = edsl::Value(axis);
+    return *this;
+  }
+
+  operator edsl::Tensor() const {
+    auto args = edsl::make_tuple(I_, count_, axis_);
+    return details::op("repeat", args).as_tensor();
+  }
+
+ private:
+  edsl::Tensor I_;
+  edsl::Value count_ = edsl::Value(1);
+  edsl::Value axis_ = edsl::Value(0);
+};
 
 inline edsl::Tensor reshape(const edsl::Tensor& I, const edsl::Value& dims) {
   auto args = edsl::make_tuple(I, dims);

@@ -1727,7 +1727,7 @@ Value image_resize(const Value& value) {
 
   // The total number of spatial dimensions and how many non-spatial dimensions are before & after the spatial dims
   size_t rank;  // an error if this isn't 2
-  size_t pre_axes;
+  int64_t pre_axes;
   auto I = raw_I.as_tensor();
   auto ndims = I.rank();
   switch (layout) {
@@ -1782,7 +1782,7 @@ Value image_resize(const Value& value) {
       I.bind_dims(I_dims);
       std::vector<TensorDim> O_dims;
       std::vector<TensorIndex> O_idxs;
-      for (size_t ax = 0; ax < pre_axes; ++ax) {
+      for (int64_t ax = 0; ax < pre_axes; ++ax) {
         O_dims.push_back(I_dims[ax]);
         O_idxs.push_back(I_idxs[ax]);
       }
@@ -2234,8 +2234,16 @@ Value repeat(const Value& value) {
     throw std::runtime_error(llvm::formatv("PlaidML repeat op expects 3 arguments (received {0})", args.size()));
   }
   auto I = args[0].as_tensor();
-  auto repeats = args[1].as_int();
   auto raw_axis = args[2].as_int();
+
+  TensorDim repeats;
+  if (args[1].is_int()) {
+    repeats = TensorDim(args[1].as_int());
+  } else if (args[1].is_dim()) {
+    repeats = args[1].as_dim();
+  } else {
+    throw std::runtime_error("Repeat only accepts int or TensorDim for repeats parameter");
+  }
 
   // Set up useful variables
   auto ndims = I.rank();
@@ -2488,15 +2496,15 @@ Value softmax(const Value& value) {
   auto I = args[0].as_tensor();
   auto raw_axis = args[1].as_int();
 
-  auto ndims = I.rank();
-  auto axis = normalize_axis(raw_axis, ndims, "softmax");
+  int64_t ndims = I.rank();
+  int64_t axis = normalize_axis(raw_axis, ndims, "softmax");
 
   // Ensure the axis is the last dimension, to make the derivative code happy
   bool transposed = false;
   std::vector<Value> pattern(ndims);  // Will be reused at the end to return to original order
   if (axis != ndims - 1) {
     transposed = true;
-    for (size_t i = 0; i < ndims; ++i) {
+    for (int64_t i = 0; i < ndims; ++i) {
       if (i == axis) {
         pattern[i] = Value{ndims - 1};
       } else if (i == ndims - 1) {

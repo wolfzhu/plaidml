@@ -1,0 +1,60 @@
+set(BUILD_SHARED_LIBS OFF)
+set(LLVM_APPEND_VC_REV OFF CACHE BOOL "" FORCE)
+set(LLVM_ENABLE_IDE OFF CACHE BOOL "" FORCE)
+set(LLVM_ENABLE_ASSERTIONS ON CACHE BOOL "" FORCE)
+set(LLVM_ENABLE_BINDINGS OFF CACHE BOOL "" FORCE)
+set(LLVM_ENABLE_PROJECTS "mlir;openmp" CACHE STRING "" FORCE)
+set(LLVM_ENABLE_RTTI ON CACHE BOOL "" FORCE)
+set(LLVM_ENABLE_WARNINGS OFF CACHE BOOL "" FORCE)
+set(LLVM_INCLUDE_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(LLVM_INCLUDE_TESTS OFF CACHE BOOL "" FORCE)
+set(LLVM_INCLUDE_BENCHMARKS OFF CACHE BOOL "" FORCE)
+set(LLVM_TARGETS_TO_BUILD "X86" CACHE STRING "" FORCE)
+set(OPENMP_ENABLE_LIBOMPTARGET OFF CACHE BOOL "" FORCE)
+set(OPENMP_ENABLE_OMPT_TOOLS OFF CACHE BOOL "" FORCE)
+set(OPENMP_STANDALONE_BUILD ON CACHE BOOL "" FORCE)
+
+message("LOCAL_LLVM_DIR: ${LOCAL_LLVM_DIR}")
+
+if(LOCAL_LLVM_DIR)
+  set(LLVM_SOURCE_DIR ${LOCAL_LLVM_DIR})
+  set(LLVM_BINARY_DIR ${CMAKE_BINARY_DIR}/_deps/llvm-project-build)
+  add_subdirectory(${LLVM_SOURCE_DIR}/llvm ${LLVM_BINARY_DIR} EXCLUDE_FROM_ALL)
+else()
+  FetchContent_Declare(
+    llvm-project
+    URL      https://github.com/plaidml/llvm-project/archive/182eb478559f27191b7373616f30a608065aaaa3.tar.gz
+    URL_HASH SHA256=606ce4fae35c72b951f31402741403d568287933712db5ae4e735e51b00bab46
+  )
+  FetchContent_GetProperties(llvm-project)
+  if(NOT llvm-project_POPULATED)
+    FetchContent_Populate(llvm-project)
+    set(LLVM_SOURCE_DIR ${llvm-project_SOURCE_DIR})
+    set(LLVM_BINARY_DIR ${llvm-project_BINARY_DIR})
+    add_subdirectory(${LLVM_SOURCE_DIR}/llvm ${LLVM_BINARY_DIR} EXCLUDE_FROM_ALL)
+  endif()
+endif()
+
+list(APPEND LLVM_INCLUDE_DIRS
+  ${LLVM_SOURCE_DIR}/llvm/include
+  ${LLVM_BINARY_DIR}/include
+)
+
+list(APPEND MLIR_INCLUDE_DIRS
+  ${LLVM_SOURCE_DIR}/mlir/include
+  ${LLVM_BINARY_DIR}/tools/mlir/include
+)
+
+set(LLVM_INCLUDE_DIRS ${LLVM_INCLUDE_DIRS})
+set(MLIR_INCLUDE_DIRS ${MLIR_INCLUDE_DIRS})
+
+include_directories(SYSTEM
+  ${LLVM_INCLUDE_DIRS}
+  ${MLIR_INCLUDE_DIRS}
+  ${LIBOMP_INCLUDE_DIR}
+)
+
+target_include_directories(omp PUBLIC
+  ${LLVM_SOURCE_DIR}/openmp/runtime/src
+  ${LLVM_BINARY_DIR}/projects/openmp/runtime/src
+)
