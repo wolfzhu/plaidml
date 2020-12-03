@@ -19,7 +19,7 @@ def plaidml_tf_workspace():
         strip_prefix = "tensorflow-ca0607c19884fc8eb0a4d32a1fe58cc42ced8737",
         link_files = {
             clean_dep("//vendor/tensorflow:third_party/py/python_configure.bzl"): "third_party/py/python_configure.bzl",
-            clean_dep("//vendor/tensorflow:tensorflow/BUILD"): "tensorflow/BUILD",
+            clean_dep("//vendor/tensorflow:tensorflow/tf_BUILD"): "tensorflow/BUILD",
             clean_dep("//vendor/tensorflow:tensorflow/core/platform/mem.h"): "tensorflow/core/platform/mem.h",
         },
     )
